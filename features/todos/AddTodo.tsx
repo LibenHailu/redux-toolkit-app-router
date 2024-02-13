@@ -3,17 +3,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { useDispatch } from "react-redux"
-import { todoAdded } from "./todosSlice"
+import { useAddTodoMutation } from "../api/apiSlice"
 
 export const AddTodo = () => {
-    const dispatch = useDispatch()
+    const [addTodo, { isLoading }] = useAddTodoMutation()
 
     const [task, setTask] = useState('')
 
-    function addTodo() {
+    async function addTodoHandler() {
         if (task) {
-            dispatch(todoAdded(task))
+            await addTodo({ title: task }).unwrap()
             setTask("")
         }
     }
@@ -23,7 +22,7 @@ export const AddTodo = () => {
             <div className="w-full flex-col gap-4">
                 <Label htmlFor="task" className="mb-1">Task</Label>
                 <Input placeholder="Task" id="task" value={task} onChange={e => setTask(e.target.value)} />
-                <Button className="w-full justify-center my-2" type="button" onClick={addTodo} size="sm">
+                <Button className="w-full justify-center my-2" type="button" aria-disabled={isLoading} onClick={addTodoHandler} size="sm">
                     Create Todo
                 </Button>
             </div>

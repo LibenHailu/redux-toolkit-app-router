@@ -1,32 +1,30 @@
 "use client"
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { fetchTodos, selectAllTodos, selectTodoStatus, todoDeleted } from './todosSlice'
-// import { Checkbox } from "@/components/ui/checkbox"
-// import { Button } from "@/components/ui/button"
-import { Todo } from '@/types/todo'
-import { cn } from '@/lib/utils'
-import { Checkbox } from '@/components/ui/checkbox'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
+import { useDeleteTodoMutation, useGetTodosQuery, useUpdateTodoMutation } from '../api/apiSlice'
 
 export const TodosList = () => {
 
-    const todos = useSelector(selectAllTodos)
-    const todoStatus = useSelector(selectTodoStatus)
-    const dispatch = useDispatch()
+    const {
+        data: todos,
+        isLoading,
+        isSuccess,
+        isError,
+        error
+    } = useGetTodosQuery()
 
-    useEffect(() => {
-        if (todoStatus === 'idle') {
-            dispatch(fetchTodos())
-        }
-    }, [todoStatus, dispatch])
+    if (isLoading) {
+        return <p>Loading...</p>
+    }
 
     return (
         <section >
             <h2 className='font-bold py-2'>Todos</h2>
             <div className="grid gap-4">
                 {
-                    todos.map(todo => (
+                    todos.map((todo: TodoItemProp) => (
                         <TodoItem key={todo.id} todo={todo} />
                     ))
                 }
@@ -35,17 +33,27 @@ export const TodosList = () => {
     )
 }
 
-export const TodoItem: React.FC<{ todo: Todo }> = ({ todo }) => {
-    const dispatch = useDispatch()
+type TodoItemProp = { id: string, title: string, completed: boolean }
+export const TodoItem: React.FC<{ todo: TodoItemProp }> = ({ todo }) => {
+    const [deleteTodo] = useDeleteTodoMutation()
+    const [updateTodo] = useUpdateTodoMutation()
+    const [checked, setChecked] = useState(todo.completed)
+
     return (
-        <div className="grid grid-cols-[auto,1fr,auto] min-w-[40ch] max-w-[40ch] space-x-3 items-center w-full">
-            <Checkbox className="h-6 w-6 peer-children:hidden" id={todo.id} />
-            <p className={cn("text-sm font-medium  truncate", todo.completed && "line-through")}>{todo.title}</p>
-            <Button className="h-8 flex items-center" variant="destructive" onClick={() => dispatch(todoDeleted(todo.id))}>
-                <TrashIcon className="w-4 h-4" />
-                <span className="sr-only">Delete</span>
+        <div className="min-w-[40ch] max-w-[40ch] items-center justify-center">
+            <div className="flex items-center space-x-2">
+                <Checkbox id={todo.id}
+                    checked={checked} onCheckedChange={(e) => {
+                        setChecked(!checked)
+                        updateTodo({ ...todo, completed: !checked })
+                    }}
+                />
+                <label htmlFor={todo.id} className={cn("text-sm font-medium", todo.completed ? "line-through" : "")}>{todo.title}</label>
+            </div>
+            <Button className="w-full" size="sm" variant="destructive" onClick={() => deleteTodo(todo.id)}>
+                Delete Todo
             </Button>
-        </div>
+        </div >
     )
 }
 
